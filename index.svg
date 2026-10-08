@@ -1,0 +1,234 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:xhtml="http://www.w3.org/1999/xhtml"
+    width="100%"
+    height="100%"
+    style="display:block;margin:0;padding:0;border:0;"
+>
+    <foreignObject
+        x="0"
+        y="0"
+        width="100%"
+        height="100%"
+    >
+        <xhtml:iframe
+          src"<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>html runner</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin-top: 50px;
+    }
+
+    h1 {
+      color: rgb(31, 124, 224);
+    }
+
+    ph {
+      font-size: 6px;
+    }
+
+    .custom-file-upload {
+      display: inline-block;
+      padding: 10px 20px;
+      cursor: pointer;
+      background-color: #5CAF50;
+      color: #fff;
+      border-radius: 5px;
+      transition: background-color .3s;
+      margin: 5px;
+    }
+
+    .custom-file-upload:hover {
+      background-color: #3cad30;
+    }
+
+    input[type=file] {
+      display: none;
+    }
+
+    .stuff-wrapper {
+      margin: 20px 0;
+    }
+
+    #stuffButton {
+      display: inline-block;
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #ffffff;
+      border: 1px solid #fcfcfc;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+
+    #message {
+      margin-top: 10px;
+      color: #333;
+      font-size: 16px;
+    }
+
+    .asset-info {
+      margin: 10px 0;
+      padding: 10px;
+      background-color: #f0f0f0;
+      border-radius: 5px;
+      display: none;
+    }
+
+    .asset-info.active {
+      display: block;
+    }
+  </style>
+</head>
+<body>
+  <h1>Maxim likes balls</h1>
+  <p>THIS IS MAXIM APPROVED</p>
+  <h2></h2>
+  <p>Not affiliated with the CCC©️</p>
+  <p>VERSION 3.2</p>
+
+  <div class="stuff-wrapper">
+    <label for="folderInput" class="custom-file-upload">Choose Folder (Assets)</label>
+    <input type="file" id="folderInput" webkitdirectory directory multiple>
+    <div class="asset-info" id="assetInfo"></div>
+  </div>
+
+  <div class="stuff-wrapper">
+    <label for="fileInput" class="custom-file-upload">Choose HTML File</label>
+    <input type="file" id="fileInput" accept=".html">
+  </div>
+
+  <div class="stuff-wrapper">
+    <button id="stuffButton">LICENSED UNDER THE APACHE 2.0 LICENSE here</button>
+    <p id="message" hidden></p>
+    <script>
+      const linkUrl = 'https://cdn.jsdelivr.net/gh/DerrativeWork/Appache.Licence.2.0@HEAD/LICENSE';
+
+      fetch(linkUrl)
+        .then(response => {
+          if (!response.ok) {
+            throw new Error('Network response was not ok');
+          }
+          return response.text();
+        })
+        .then(text => {
+          const messageElement = document.getElementById('message');
+          messageElement.textContent = text;
+          messageElement.removeAttribute('hidden');
+        })
+        .catch(error => {
+          console.error('There was a problem fetching the text:', error);
+        });
+    </script>
+  </div>
+
+  <script>
+    let assetMap = new Map();
+
+    const folderInput = document.getElementById('folderInput');
+    const assetInfo = document.getElementById('assetInfo');
+
+    folderInput.addEventListener('change', e => {
+      assetMap.clear();
+      const files = e.target.files;
+
+      if (files.length === 0) {
+        assetInfo.classList.remove('active');
+        return;
+      }
+
+      for (let file of files) {
+        assetMap.set(file.webkitRelativePath, file);
+      }
+
+      assetInfo.textContent = `Loaded ${files.length} asset(s)`;
+      assetInfo.classList.add('active');
+    });
+
+    const fileInput = document.getElementById('fileInput');
+
+    fileInput.addEventListener('change', e => {
+      const file = e.target.files[0];
+      if (file && file.type === 'text/html') {
+        const reader = new FileReader();
+        reader.onload = function(ev) {
+          const newTab = window.open();
+          if (!newTab) {
+            alert('Please allow pop-ups for this site.');
+            fileInput.value = '';
+            return;
+          }
+
+          const blobUrls = new Map();
+          const promises = [];
+
+          for (let [path, file] of assetMap) {
+            const promise = new Promise((resolve) => {
+              const reader = new FileReader();
+              reader.onload = function(e) {
+                const blobUrl = URL.createObjectURL(new Blob([e.target.result], { type: file.type }));
+                blobUrls.set(path, blobUrl);
+                resolve();
+              };
+              reader.readAsArrayBuffer(file);
+            });
+            promises.push(promise);
+          }
+
+          Promise.all(promises).then(() => {
+
+            let html = ev.target.result;
+
+            for (let [originalPath, blobUrl] of blobUrls) {
+              const fileName = originalPath.split('/').pop();
+              const regex = new RegExp(`(?:src=["']|href=["']|url\\(["']?)(?:\\.?\\/)?${fileName.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}`, 'g');
+              html = html.replace(regex, `$&`.replace(fileName, blobUrl));
+            }
+
+            html = html.replace(/(?:src=["']|href=["']|url\(["']?)(\.?\/?[^"')]+)/g, (match, path) => {
+              for (let [originalPath, blobUrl] of blobUrls) {
+                if (originalPath.endsWith(path) || originalPath.endsWith('/' + path) || path.endsWith(originalPath)) {
+                  return match.replace(path, blobUrl);
+                }
+              }
+              return match;
+            });
+
+            newTab.document.open();
+            newTab.document.write(html);
+            newTab.document.close();
+
+            newTab.addEventListener('beforeunload', () => {
+              blobUrls.forEach(url => URL.revokeObjectURL(url));
+            });
+
+            fileInput.value = '';
+          });
+        };
+        reader.readAsText(file);
+      } else {
+        alert('Please select a valid HTML file.');
+        fileInput.value = '';
+      }
+    });
+
+    document.getElementById('stuffButton').addEventListener('click', () => {
+      const message = document.getElementById('message');
+      message.hidden = false;
+    });
+  </script>
+
+  <ph>NOTICE: modifications may not include profanity, nsfw content, and weird things. use common sense.</ph>
+</body>
+</html>"
+          style="position:fixed;left:0;top:0;width:100vw;height:100vh;border:0;margin:0;padding:0;display:block;"
+        />
+    </foreignObject>
+</svg>
